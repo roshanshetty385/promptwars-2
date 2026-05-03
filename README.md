@@ -1,1 +1,1 @@
-# -promptwars-2
+# promptwars-2
