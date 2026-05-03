@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Award, RefreshCcw } from 'lucide-react';
 
 const questions = [

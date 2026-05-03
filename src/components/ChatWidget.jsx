@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Send, Bot, MessageCircle, X, MapPin } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import { useApi } from '../context/ApiContext';
@@ -22,16 +22,6 @@ const ChatWidget = () => {
     }
   }, [messages, isTyping, isOpen]);
 
-  useEffect(() => {
-    // Initial Greeting if messages are empty
-    if (messages.length === 0) {
-      addBotMessage(
-        "Namaskar! I'm **ElectionGuide**, your real-time assistant. How can I help you today?",
-        ['Register to vote', 'Find my polling booth', 'What is VVPAT?']
-      );
-    }
-  }, []);
-
   const addBotMessage = (text, options = null, widget = null) => {
     setIsTyping(true);
     setTimeout(() => {
@@ -39,6 +29,18 @@ const ChatWidget = () => {
       setIsTyping(false);
     }, 800);
   };
+
+  useEffect(() => {
+    // Initial Greeting if messages are empty
+    if (messages.length === 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      addBotMessage(
+        "Namaskar! I'm **ElectionGuide**, your real-time assistant. How can I help you today?",
+        ['Register to vote', 'Find my polling booth', 'What is VVPAT?']
+      );
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const addUserMessage = (text) => {
     setMessages(prev => [...prev, { text, sender: 'user' }]);
@@ -91,11 +93,7 @@ const ChatWidget = () => {
     if (googleKey) {
       setIsTyping(true);
       try {
-        const history = messages.map(m => ({
-          role: m.sender === 'bot' ? 'model' : 'user',
-          parts: [{ text: m.text }]
-        }));
-        
+        // We send the latest query + system instruction
         // Remove the greeting from history if it's too long, or just send the latest query
         // For simplicity, we send the latest query + system instruction
         const payload = {
@@ -118,7 +116,7 @@ const ChatWidget = () => {
         } else {
           addBotMessage("I'm sorry, I couldn't process that query using the API.");
         }
-      } catch (e) {
+      } catch {
         addBotMessage("Error communicating with Gemini API. Is your key valid?");
       }
       setIsTyping(false);

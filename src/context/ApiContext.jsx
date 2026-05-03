@@ -1,7 +1,8 @@
-import React, { createContext, useState, useContext } from 'react';
+import { createContext, useState, useContext } from 'react';
 
 const ApiContext = createContext();
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useApi = () => useContext(ApiContext);
 
 export const ApiProvider = ({ children }) => {
@@ -22,7 +23,7 @@ export const ApiProvider = ({ children }) => {
       // Let's assume standard JSON
       firebaseConfig = JSON.parse(firebaseConfigStr);
     }
-  } catch (e) {
+  } catch {
     console.error("Invalid Firebase Config JSON");
   }
 

@@ -1,14 +1,15 @@
-import React from 'react';
+import { lazy, Suspense } from 'react';
 import Hero from './components/Hero';
 import GuidanceSteps from './components/GuidanceSteps';
-import Timeline from './components/Timeline';
-import Quiz from './components/Quiz';
-import Pledge from './components/Pledge';
-import FAQ from './components/FAQ';
-import ChatWidget from './components/ChatWidget';
-import ApiConfigWidget from './components/ApiConfigWidget';
-import { ApiProvider } from './context/ApiContext';
 import { ShieldCheck } from 'lucide-react';
+
+const Timeline = lazy(() => import('./components/Timeline'));
+const Quiz = lazy(() => import('./components/Quiz'));
+const Pledge = lazy(() => import('./components/Pledge'));
+const FAQ = lazy(() => import('./components/FAQ'));
+const ChatWidget = lazy(() => import('./components/ChatWidget'));
+const ApiConfigWidget = lazy(() => import('./components/ApiConfigWidget'));
+import { ApiProvider } from './context/ApiContext';
 
 function App() {
   return (
@@ -28,10 +29,12 @@ function App() {
       <main style={{ paddingTop: '70px' }}>
         <Hero />
         <GuidanceSteps />
-        <Timeline />
-        <Quiz />
-        <Pledge />
-        <FAQ />
+        <Suspense fallback={<div style={{ padding: '4rem', textAlign: 'center', color: '#64748b' }}>Loading content...</div>}>
+          <Timeline />
+          <Quiz />
+          <Pledge />
+          <FAQ />
+        </Suspense>
       </main>
 
       <footer style={{ background: '#0f172a', color: '#cbd5e1', padding: '3rem 0', textAlign: 'center' }}>
@@ -43,8 +46,10 @@ function App() {
       </footer>
 
       {/* Real-time AI Assistant */}
-      <ChatWidget />
-      <ApiConfigWidget />
+      <Suspense fallback={null}>
+        <ChatWidget />
+        <ApiConfigWidget />
+      </Suspense>
     </div>
     </ApiProvider>
   );

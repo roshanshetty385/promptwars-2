@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Download, Award, Share2 } from 'lucide-react';
 import { useApi } from '../context/ApiContext';
 import { initializeApp, getApps } from 'firebase/app';

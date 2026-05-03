@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useApi } from '../context/ApiContext';
 import { Settings, X } from 'lucide-react';
 

@@ -16,7 +16,7 @@ test('can open chat widget and receive greeting', async () => {
   render(<App />);
   
   // Find the toggle button
-  const toggleBtn = screen.getByLabelText(/Toggle Chat/i);
+  const toggleBtn = await screen.findByRole('button', { name: /Toggle Chat/i });
   expect(toggleBtn).toBeInTheDocument();
   
   // Click to open chat
@@ -31,7 +31,7 @@ test('can open chat widget and receive greeting', async () => {
 
 test('quiz component renders and interacts', async () => {
   render(<App />);
-  const quizTitle = screen.getByRole('heading', { name: /Test Your Knowledge/i });
+  const quizTitle = await screen.findByRole('heading', { name: /Test Your Knowledge/i });
   expect(quizTitle).toBeInTheDocument();
   
   // Click first option of first question
