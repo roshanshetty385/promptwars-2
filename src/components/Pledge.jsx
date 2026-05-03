@@ -1,13 +1,53 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Download, Award, Share2 } from 'lucide-react';
+import { useApi } from '../context/ApiContext';
+import { initializeApp, getApps } from 'firebase/app';
+import { getFirestore, doc, getDoc, setDoc, increment } from 'firebase/firestore';
 
 const Pledge = () => {
+  const { firebaseConfig } = useApi();
   const [name, setName] = useState('');
   const [pledged, setPledged] = useState(false);
+  const [totalPledges, setTotalPledges] = useState(0);
 
-  const handlePledge = (e) => {
+  useEffect(() => {
+    const fetchPledges = async () => {
+      if (firebaseConfig && !getApps().length) {
+        initializeApp(firebaseConfig);
+      }
+      if (firebaseConfig) {
+        try {
+          const db = getFirestore();
+          const docRef = doc(db, 'stats', 'pledges');
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            setTotalPledges(docSnap.data().count || 0);
+          }
+        } catch (e) {
+          console.error("Firebase error", e);
+        }
+      }
+    };
+    fetchPledges();
+  }, [firebaseConfig]);
+
+  const handlePledge = async (e) => {
     e.preventDefault();
-    if (name.trim()) setPledged(true);
+    if (name.trim()) {
+      setPledged(true);
+      if (firebaseConfig) {
+        try {
+          const db = getFirestore();
+          const docRef = doc(db, 'stats', 'pledges');
+          await setDoc(docRef, { count: increment(1) }, { merge: true });
+          setTotalPledges(p => p + 1);
+        } catch (e) {
+          console.error("Firebase write error", e);
+        }
+      } else {
+        setTotalPledges(p => p + 1); // Mock increment
+      }
+    }
   };
 
   return (
@@ -18,7 +58,7 @@ const Pledge = () => {
             <Award size={48} style={{ margin: '0 auto 1.5rem', opacity: 0.9 }} />
             <h2 style={{ fontSize: '2.5rem', marginBottom: '1rem', color: 'white' }}>Take the Voter's Pledge</h2>
             <p style={{ fontSize: '1.1rem', marginBottom: '2.5rem', opacity: 0.9, lineHeight: 1.6 }}>
-              Commit to participating in the democratic process. Generate your personalized pledge badge and inspire others to vote!
+              Commit to participating in the democratic process. Join <strong style={{color: '#138808', background: 'white', padding: '2px 8px', borderRadius: '4px'}}>{totalPledges > 0 ? totalPledges.toLocaleString() : 'thousands of'}</strong> others and inspire people to vote!
             </p>
             <form onSubmit={handlePledge} style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
               <input 

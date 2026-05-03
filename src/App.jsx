@@ -6,11 +6,14 @@ import Quiz from './components/Quiz';
 import Pledge from './components/Pledge';
 import FAQ from './components/FAQ';
 import ChatWidget from './components/ChatWidget';
+import ApiConfigWidget from './components/ApiConfigWidget';
+import { ApiProvider } from './context/ApiContext';
 import { ShieldCheck } from 'lucide-react';
 
 function App() {
   return (
-    <div style={{ position: 'relative' }}>
+    <ApiProvider>
+      <div style={{ position: 'relative' }}>
       {/* Header Bar */}
       <header style={{ position: 'fixed', top: 0, width: '100%', background: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(8px)', zIndex: 50, borderBottom: '1px solid #e2e8f0' }}>
         <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '70px' }}>
@@ -41,7 +44,9 @@ function App() {
 
       {/* Real-time AI Assistant */}
       <ChatWidget />
+      <ApiConfigWidget />
     </div>
+    </ApiProvider>
   );
 }
 

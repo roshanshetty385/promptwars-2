@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Bot, MessageCircle, X, MapPin } from 'lucide-react';
 import DOMPurify from 'dompurify';
+import { useApi } from '../context/ApiContext';
 
 const ChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -9,6 +10,7 @@ const ChatWidget = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [currentStep, setCurrentStep] = useState('greeting');
   const messagesEndRef = useRef(null);
+  const { googleKey } = useApi();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -49,9 +51,81 @@ const ChatWidget = () => {
     processLogic(text, currentStep);
   };
 
-  const processLogic = (input, step) => {
+  const processLogic = async (input, step) => {
     const text = input.toLowerCase();
-    
+
+    // Check for explicit Maps request for booth
+    if (text.includes('booth') || text.includes('station') || text.includes('where to vote')) {
+      if (googleKey) {
+        addBotMessage("Please provide your Pincode or exact area to find your polling booth on the map.");
+        setCurrentStep('find_booth_live');
+      } else {
+        addBotMessage("Please provide your Pincode to find your polling booth.", null);
+        setCurrentStep('find_booth');
+      }
+      return;
+    }
+
+    if (step === 'find_booth_live') {
+      addBotMessage(
+        `Here is the map search for a polling station near ${input}:`,
+        ['Ask another question'],
+        { type: 'map_embed', query: `Polling Station near ${input}` }
+      );
+      setCurrentStep('greeting');
+      return;
+    }
+
+    if (step === 'find_booth') {
+      const location = text.length > 3 ? text : "your area";
+      addBotMessage(
+        `Based on ${location}, your designated polling station is typically a local school. For exact details, check the ECI portal.`,
+        ['Show Map Example'],
+        { type: 'map', query: `Polling Station near ${location}` }
+      );
+      setCurrentStep('greeting');
+      return;
+    }
+
+    // Gemini Integration
+    if (googleKey) {
+      setIsTyping(true);
+      try {
+        const history = messages.map(m => ({
+          role: m.sender === 'bot' ? 'model' : 'user',
+          parts: [{ text: m.text }]
+        }));
+        
+        // Remove the greeting from history if it's too long, or just send the latest query
+        // For simplicity, we send the latest query + system instruction
+        const payload = {
+          system_instruction: {
+            parts: { text: "You are ElectionGuide, an expert AI assistant on Indian Elections. Keep answers concise, factual, under 3 sentences. Explain EVMs, VVPAT, NOTA, registration, and schedules. Use markdown." }
+          },
+          contents: [{ role: 'user', parts: [{ text: input }] }]
+        };
+
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${googleKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (data.candidates && data.candidates.length > 0) {
+          const aiText = data.candidates[0].content.parts[0].text;
+          addBotMessage(aiText);
+        } else {
+          addBotMessage("I'm sorry, I couldn't process that query using the API.");
+        }
+      } catch (e) {
+        addBotMessage("Error communicating with Gemini API. Is your key valid?");
+      }
+      setIsTyping(false);
+      return;
+    }
+
+    // Fallback Mock Logic
     if (text.includes('nota')) {
       addBotMessage("NOTA stands for 'None of the Above'. It allows you to express your disapproval of all contesting candidates.", ['Back to start']);
       return;
@@ -60,20 +134,8 @@ const ChatWidget = () => {
       addBotMessage("VVPAT is an independent system attached to EVMs that allows voters to verify their vote via a paper slip.", ['Back to start']);
       return;
     }
-
     if (text.includes('register')) {
       addBotMessage("To register, visit the official Voters' Service Portal (voters.eci.gov.in) and fill Form 6.", ['Find my polling booth']);
-    } else if (text.includes('booth') || text.includes('find')) {
-      addBotMessage("Please provide your Pincode to find your polling booth.", null);
-      setCurrentStep('find_booth');
-    } else if (step === 'find_booth') {
-      const location = text.length > 3 ? text : "your area";
-      addBotMessage(
-        `Based on ${location}, your designated polling station is typically a local school. For exact details, check the ECI portal.`,
-        ['Show Map Example'],
-        { type: 'map', query: `Polling Station near ${location}` }
-      );
-      setCurrentStep('greeting');
     } else {
       addBotMessage("I can help with registration, finding your booth, or explaining election terms.", ['Register to vote', 'Find my polling booth']);
     }
@@ -102,6 +164,19 @@ const ChatWidget = () => {
               <div className="message-bubble">
                 <span dangerouslySetInnerHTML={renderMessageContent(msg.text)} />
                 
+                {msg.widget && msg.widget.type === 'map_embed' && googleKey && (
+                  <div style={{ marginTop: '0.5rem', borderRadius: '8px', overflow: 'hidden' }}>
+                    <iframe
+                      width="100%"
+                      height="200"
+                      style={{ border: 0 }}
+                      loading="lazy"
+                      allowFullScreen
+                      referrerPolicy="no-referrer-when-downgrade"
+                      src={`https://www.google.com/maps/embed/v1/place?key=${googleKey}&q=${encodeURIComponent(msg.widget.query)}`}>
+                    </iframe>
+                  </div>
+                )}
                 {msg.widget && msg.widget.type === 'map' && (
                   <div style={{ marginTop: '0.5rem' }}>
                     <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(msg.widget.query)}`}

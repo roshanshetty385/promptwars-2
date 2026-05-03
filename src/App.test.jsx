@@ -7,8 +7,9 @@ window.HTMLElement.prototype.scrollIntoView = vi.fn();
 
 test('renders ElectionGuide Landing Page', () => {
   render(<App />);
-  const titleElements = screen.getAllByText(/ElectionGuide/i);
-  expect(titleElements.length).toBeGreaterThan(0);
+  // Using getByText for the header title explicitly to avoid multiple matches with page text
+  const titleElement = screen.getByRole('heading', { name: /Your Vote, Your Voice/i });
+  expect(titleElement).toBeInTheDocument();
 });
 
 test('can open chat widget and receive greeting', async () => {
